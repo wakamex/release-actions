@@ -1,0 +1,18 @@
+name: Validate gate
+description: Fail unless every job the calling job needs succeeded. Use in a job with if always().
+inputs:
+  needs:
+    description: The calling job's needs context, as toJSON(needs).
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Require every needed job to succeed
+      shell: bash
+      env:
+        NEEDS: ${{ inputs.needs }}
+      run: |
+        set -euo pipefail
+        jq -e 'length > 0' <<<"$NEEDS" > /dev/null || { echo "the gate needs at least one job" >&2; exit 1; }
+        jq -r 'to_entries[] | "\(.key): \(.value.result)"' <<<"$NEEDS"
+        jq -e 'all(.[]; .result == "success")' <<<"$NEEDS" > /dev/null

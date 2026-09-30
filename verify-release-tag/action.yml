@@ -1,0 +1,15 @@
+name: Verify release tag
+description: Check that the pushed v* tag is annotated, matches the project version, and has committed release notes.
+inputs:
+  version-command:
+    description: Shell command, run in the checkout, that prints the project version.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Verify release tag
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        VERSION_COMMAND: ${{ inputs.version-command }}
+      run: VERSION=$(bash -c "$VERSION_COMMAND") "$GITHUB_ACTION_PATH/verify.sh"
