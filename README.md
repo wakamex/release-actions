@@ -2,7 +2,12 @@
 
 Shared GitHub Actions for publishing wakamex packages. Each package repository keeps a short `publish.yml` and `release-eligibility.yml` that call these, so a change to the release steps is made once here instead of in every repository.
 
-Consumers reference the `v1` branch. Changes that keep the inputs and behavior compatible land on `main` and fast-forward `v1`. A breaking change goes to a new `v2` branch.
+Consumers reference the `stable` branch, so a change here reaches every repository without editing it.
+
+- Changes stay backward compatible: new inputs get defaults, and jobs, check names, and inputs are not renamed or removed while a caller uses them.
+- Changes land on `main` first and are tested from `main` in a test repository. Promoting them fast-forwards `stable` and adds an annotated `vX.Y.Z` tag, so the tags list every commit `stable` has pointed to. A ruleset keeps `stable` fast-forward only.
+- Each run records the commit it used: the job log shows `wakamex/release-actions/...@refs/heads/stable (SHA)` for workflows and the downloaded SHA for actions.
+- Third-party actions are pinned to full commit SHAs and runners to versioned labels such as `ubuntu-24.04`. `.github/check-pins.sh` enforces both in this repository's lint job and can check a caller's `.github` directory.
 
 ## Contents
 
@@ -33,7 +38,7 @@ permissions:
 
 jobs:
   release-eligible:
-    uses: wakamex/release-actions/.github/workflows/python-validation.yml@v1
+    uses: wakamex/release-actions/.github/workflows/python-validation.yml@stable
 ```
 
 This produces the `release-eligible / validate` check that the `Validated release tags` ruleset requires.
@@ -52,24 +57,24 @@ permissions:
 
 jobs:
   validate:
-    uses: wakamex/release-actions/.github/workflows/python-validation.yml@v1
+    uses: wakamex/release-actions/.github/workflows/python-validation.yml@stable
 
   publish:
     needs: validate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment: pypi
     permissions:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: wakamex/release-actions/pypi-publish@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: wakamex/release-actions/pypi-publish@stable
 
   github-release:
     needs: publish
     permissions:
       contents: write
-    uses: wakamex/release-actions/.github/workflows/github-release.yml@v1
+    uses: wakamex/release-actions/.github/workflows/github-release.yml@stable
 ```
 
 ## Binary releases
@@ -83,7 +88,7 @@ A multi-job validation workflow ends with a gate job. GitHub reports a skipped j
     needs: [build, windows]
     runs-on: ubuntu-24.04
     steps:
-      - uses: wakamex/release-actions/validate-gate@v1
+      - uses: wakamex/release-actions/validate-gate@stable
         with:
           needs: ${{ toJSON(needs) }}
 ```
@@ -99,14 +104,14 @@ jobs:
     needs: validate
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: wakamex/release-actions/verify-release-tag@v1
+      - uses: wakamex/release-actions/verify-release-tag@stable
         with:
           version-command: cat VERSION
       - run: ./build-release-assets.sh release-assets
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: release-assets
           path: release-assets/
@@ -119,7 +124,7 @@ jobs:
       attestations: write
       contents: write
       id-token: write
-    uses: wakamex/release-actions/.github/workflows/binary-release.yml@v1
+    uses: wakamex/release-actions/.github/workflows/binary-release.yml@stable
     with:
       artifact: release-assets
 ```
