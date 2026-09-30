@@ -1,0 +1,22 @@
+name: Publish to PyPI
+description: Verify the release tag and notes, build without local sources, and trusted-publish to PyPI.
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@v9.0.0
+      with:
+        enable-cache: false
+    - name: Verify version tag
+      shell: bash
+      run: test "$GITHUB_REF_NAME" = "v$(uv --no-config version --short)"
+    - name: Verify release notes
+      shell: bash
+      run: |
+        notes="release-notes/$GITHUB_REF_NAME.md"
+        test -f "$notes" && test ! -L "$notes" && test -s "$notes"
+    - name: Build
+      shell: bash
+      run: uv --no-config build --no-sources
+    - name: Publish
+      shell: bash
+      run: uv publish --trusted-publishing always

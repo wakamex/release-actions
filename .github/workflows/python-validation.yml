@@ -1,0 +1,22 @@
+name: Python validation
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v9.0.0
+        with:
+          enable-cache: false
+      - name: Check lockfile
+        run: uv --no-config lock --check
+      - name: Test
+        run: uv --no-config run --locked python -m unittest discover -s tests
+      - name: Build
+        run: uv --no-config build --no-sources
