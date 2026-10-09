@@ -14,7 +14,7 @@ Consumers reference the `stable` branch, so a change here reaches every reposito
 | Path | Kind | What it does |
 |---|---|---|
 | `.github/workflows/python-validation.yml` | reusable workflow, job `validate` | Checks `uv.lock`, runs `python -m unittest discover -s tests`, and builds without local sources. |
-| `pypi-publish` | composite action | Runs the `verify-release-tag` check against `uv --no-config version --short`, builds, and runs `uv publish --trusted-publishing always`. |
+| `pypi-publish` | composite action | Runs the `verify-release-tag` check against `uv --no-config version --short`, builds, and runs `uv publish --trusted-publishing always --check-url https://pypi.org/simple/`, which skips files PyPI already has so a rerun completes a partial upload. Its optional `working-directory` input selects the package folder; release notes are still read from the repository root. |
 | `.github/workflows/github-release.yml` | reusable workflow | Creates the GitHub Release for the tag from `release-notes/vX.Y.Z.md`, or leaves an existing Release unchanged. |
 | `verify-release-tag` | composite action | Checks that the pushed tag is annotated, equals `v` plus the output of its `version-command` input, and has a nonempty, non-symlink `release-notes/vX.Y.Z.md`. |
 | `validate-gate` | composite action | Fails unless every job in its `needs` input succeeded. Use it in the `validate` job of a multi-job validation workflow. |
@@ -76,6 +76,8 @@ jobs:
       contents: write
     uses: wakamex/release-actions/.github/workflows/github-release.yml@stable
 ```
+
+A repository that generates several packages from one source tree runs its generator after checkout and calls `pypi-publish` once per package, each with its `working-directory`. Each PyPI project trusts the same repository, `publish.yml`, and `pypi` environment.
 
 ## Binary releases
 

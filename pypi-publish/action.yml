@@ -1,5 +1,10 @@
 name: Publish to PyPI
 description: Verify the annotated release tag and notes, build without local sources, and trusted-publish to PyPI.
+inputs:
+  working-directory:
+    description: Folder holding the package's pyproject.toml, relative to the repository root. Release notes are always read from the root.
+    required: false
+    default: .
 runs:
   using: composite
   steps:
@@ -10,10 +15,15 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
-      run: VERSION=$(uv --no-config version --short) "$GITHUB_ACTION_PATH/../verify-release-tag/verify.sh"
+        PACKAGE_DIR: ${{ inputs.working-directory }}
+      run: VERSION=$(cd "$PACKAGE_DIR" && uv --no-config version --short) "$GITHUB_ACTION_PATH/../verify-release-tag/verify.sh"
     - name: Build
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       run: uv --no-config build --no-sources
+    # --check-url skips files PyPI already has and fails on a same-named file with different
+    # contents, so rerunning after a partial upload finishes it.
     - name: Publish
       shell: bash
-      run: uv publish --trusted-publishing always
+      working-directory: ${{ inputs.working-directory }}
+      run: uv publish --trusted-publishing always --check-url https://pypi.org/simple/
