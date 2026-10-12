@@ -14,6 +14,10 @@ jobs:
       - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           enable-cache: false
+      # uv --no-config can pick a newer interpreter than the pinned one, so name it explicitly.
+      - name: Use the interpreter in .python-version
+        run: |
+          if [ -s .python-version ]; then echo "UV_PYTHON=$(head -n1 .python-version)" >> "$GITHUB_ENV"; fi
       - name: Check lockfile
         run: uv --no-config lock --check
       - name: Test

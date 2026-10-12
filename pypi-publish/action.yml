@@ -11,6 +11,16 @@ runs:
     - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
       with:
         enable-cache: false
+    # uv --no-config can pick a newer interpreter than the pinned one, so name it explicitly.
+    # A generated package without its own .python-version uses the repository root's.
+    - name: Use the interpreter in .python-version
+      shell: bash
+      env:
+        PACKAGE_DIR: ${{ inputs.working-directory }}
+      run: |
+        for file in "$PACKAGE_DIR/.python-version" .python-version; do
+          if [ -s "$file" ]; then echo "UV_PYTHON=$(head -n1 "$file")" >> "$GITHUB_ENV"; break; fi
+        done
     - name: Verify release tag
       shell: bash
       env:

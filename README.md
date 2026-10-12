@@ -13,7 +13,7 @@ Consumers reference the `stable` branch, so a change here reaches every reposito
 
 | Path | Kind | What it does |
 |---|---|---|
-| `.github/workflows/python-validation.yml` | reusable workflow, job `validate` | Checks `uv.lock`, runs `python -m unittest discover -s tests`, and builds without local sources. |
+| `.github/workflows/python-validation.yml` | reusable workflow, job `validate` | Checks `uv.lock`, runs `python -m unittest discover -s tests`, and builds without local sources, on the interpreter named in `.python-version` when the repository has one. `pypi-publish` uses the same interpreter. |
 | `pypi-publish` | composite action | Runs the `verify-release-tag` check against `uv --no-config version --short`, builds, and runs `uv publish --trusted-publishing always --check-url https://pypi.org/simple/`, which skips files PyPI already has so a rerun completes a partial upload. Its optional `working-directory` input selects the package folder; release notes are still read from the repository root. |
 | `.github/workflows/github-release.yml` | reusable workflow | Creates the GitHub Release for the tag from `release-notes/vX.Y.Z.md`, or leaves an existing Release unchanged. |
 | `verify-release-tag` | composite action | Checks that the pushed tag is annotated, equals `v` plus the output of its `version-command` input, and has a nonempty, non-symlink `release-notes/vX.Y.Z.md`. |
